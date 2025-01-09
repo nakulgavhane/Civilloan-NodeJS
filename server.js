@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
 
@@ -10,52 +9,61 @@ const Member = require('./models/member');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // Use express.json() instead of body-parser
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
-
-// API Routes
-app.get('/allservices', async (req, res) => {
-    const services = await Service.find();
-    res.json(services);
-});
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Root route
 app.get('/', (req, res) => {
     res.send('Welcome to the Civil-Finloan Finance Management Application API');
 });
 
-// API Routes
 // Get all services
 app.get('/allservices', async (req, res) => {
-    const services = await Service.find();
-    res.json(services);
+    try {
+        const services = await Service.find();
+        res.json(services);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching services', error: err });
+    }
 });
 
 // Get specific service
 app.get('/service/:type', async (req, res) => {
-    const service = await Service.findOne({ type: req.params.type });
-    if (!service) {
-        return res.status(404).json({ message: 'Service not found' });
+    try {
+        const service = await Service.findOne({ type: req.params.type });
+        if (!service) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
+        res.json(service);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching service', error: err });
     }
-    res.json(service);
 });
 
 // Submit a request form
 app.post('/service/:type/form', async (req, res) => {
-    const request = new Request(req.body);
-    await request.save();
-    res.json({ message: 'Request submitted successfully' });
+    try {
+        const request = new Request(req.body);
+        await request.save();
+        res.json({ message: 'Request submitted successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error submitting request', error: err });
+    }
 });
 
 // Register a member
 app.post('/member', async (req, res) => {
-    const member = new Member(req.body);
-    await member.save();
-    res.json({ message: 'Member registered successfully' });
+    try {
+        const member = new Member(req.body);
+        await member.save();
+        res.json({ message: 'Member registered successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error registering member', error: err });
+    }
 });
 
 // Calculate EMI
@@ -68,30 +76,46 @@ app.post('/service/:type/calculate', (req, res) => {
 
 // Update a request
 app.put('/updaterequest', async (req, res) => {
-    const { mobile, ...updateData } = req.body;
-    await Request.updateOne({ mobile }, updateData);
-    res.json({ message: 'Request updated successfully' });
+    try {
+        const { mobile, ...updateData } = req.body;
+        await Request.updateOne({ mobile }, updateData);
+        res.json({ message: 'Request updated successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating request', error: err });
+    }
 });
 
 // Update password
 app.put('/updatepassword', async (req, res) => {
-    const { mobile, password } = req.body;
-    await Member.updateOne({ mobile }, { createpassword: password });
-    res.json({ message: 'Password updated successfully' });
+    try {
+        const { mobile, password } = req.body;
+        await Member.updateOne({ mobile }, { createpassword: password });
+        res.json({ message: 'Password updated successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating password', error: err });
+    }
 });
 
 // Delete a request
 app.delete('/deleterequest', async (req, res) => {
-    const { mobile } = req.body;
-    await Request.deleteOne({ mobile });
-    res.json({ message: 'Request deleted successfully' });
+    try {
+        const { mobile } = req.body;
+        await Request.deleteOne({ mobile });
+        res.json({ message: 'Request deleted successfully' });
+ } catch (err) {
+        res.status(500).json({ message: 'Error deleting request', error: err });
+    }
 });
 
 // Cancel membership
 app.delete('/cancelmember', async (req, res) => {
-    const { mobile } = req.body;
-    await Member.deleteOne({ mobile });
-    res.json({ message: 'Membership cancelled successfully' });
+    try {
+        const { mobile } = req.body;
+        await Member.deleteOne({ mobile });
+        res.json({ message: 'Membership cancelled successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error cancelling membership', error: err });
+    }
 });
 
 // Start the server
