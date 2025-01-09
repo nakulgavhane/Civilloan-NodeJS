@@ -17,6 +17,11 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log(err));
 
+// Root route
+app.get('/', (req, res) => {
+    res.send('Welcome to the Civil-Finloan Finance Management Application API');
+});
+
 // API Routes
 app.get('/allservices', async (req, res) => {
     const services = await Service.find();
